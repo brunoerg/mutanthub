@@ -43,6 +43,7 @@ export async function previewDuplicatesAction(input: {
   projectId: string;
   commitSha: string;
   filePath: string;
+  startLine: number;
   originalCode: string;
   mutatedCode: string;
 }): Promise<ActionResult<DuplicatePreviewItem[]>> {

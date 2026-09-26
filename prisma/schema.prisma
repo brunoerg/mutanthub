@@ -1,9 +1,10 @@
 // MutantHub database schema.
 //
 // Design notes
-// - A Mutant always points to a Revision (an exact commit). Line numbers are
-//   never used as identity; the fingerprint (project + revision + file +
-//   normalized original/mutated code) is the duplicate-detection key.
+// - A Mutant always points to a Revision (an exact commit). The fingerprint
+//   (project + revision + file + start line + normalized original/mutated
+//   code) is the duplicate-detection key; a line number only identifies a
+//   location together with its revision.
 // - Moderation state (reviewStatus) and experimental outcome (mutationStatus)
 //   are independent. Every transition is appended to MutantStatusHistory.
 // - Commands stored on Submission / Validation are evidence only. They are

@@ -1129,6 +1129,7 @@ async function main() {
       projectId: project.id,
       revisionId,
       filePath: m.file,
+      startLine: m.line,
       originalCode: original,
       mutatedCode: mutated,
     });

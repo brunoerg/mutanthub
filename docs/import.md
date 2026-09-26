@@ -98,7 +98,8 @@ stored on the batch and on every mutant, appear in the mutant's history ("Import
   another line is reported as an error with the line where it was found, so the tool's output
   can be fixed rather than imported at the wrong place.
 - Duplicates are detected with the same fingerprint as manual submissions (project, revision,
-  file, original and mutated code), both within the file and against the catalogue.
+  file, start line, original and mutated code), both within the file and against the catalogue.
+  The same mutation at two different lines is two mutants, not a duplicate.
 
 Rate limit: 20 imports per administrator per hour. GitHub rate limiting aborts the import with a
 clear message; nothing is written in that case.

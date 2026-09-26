@@ -188,6 +188,7 @@ export function SuggestMutantDrawer(props: SuggestMutantDrawerProps) {
         projectId: project.id,
         commitSha,
         filePath,
+        startLine: selectedLine,
         originalCode,
         mutatedCode,
       });
@@ -199,7 +200,15 @@ export function SuggestMutantDrawer(props: SuggestMutantDrawerProps) {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [canCheckDuplicates, originalCode, mutatedCode, project.id, commitSha, filePath]);
+  }, [
+    canCheckDuplicates,
+    originalCode,
+    mutatedCode,
+    project.id,
+    commitSha,
+    filePath,
+    selectedLine,
+  ]);
 
   // Side effects of a new action result (toast, refresh gutter indicators); runs once per result.
   useEffect(() => {

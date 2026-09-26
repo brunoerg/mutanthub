@@ -252,6 +252,7 @@ async function prepare(
       projectId: project.id,
       revisionId: revision.id,
       filePath: row.file,
+      startLine: row.startLine,
       originalCode: row.originalCode,
       mutatedCode: row.mutatedCode,
     });
