@@ -109,6 +109,7 @@ export const mutantService = {
       projectId: project.id,
       revisionId: revision.id,
       filePath: input.filePath,
+      startLine: input.startLine,
       originalCode: input.originalCode,
       mutatedCode: input.mutatedCode,
     });
@@ -179,6 +180,7 @@ export const mutantService = {
       projectId: project.id,
       revisionId: revision.id,
       filePath: input.filePath,
+      startLine: input.startLine,
       originalCode: input.originalCode,
       mutatedCode: input.mutatedCode,
       excludeMutantId: created.id,
@@ -188,11 +190,12 @@ export const mutantService = {
     return { mutant: created, duplicates };
   },
 
-  /** Exact (same fingerprint) and similar (same code at other revisions) mutants. */
+  /** Exact (same fingerprint) and similar (same code at other revisions or lines) mutants. */
   async findDuplicates(params: {
     projectId: string;
     revisionId: string;
     filePath: string;
+    startLine: number;
     originalCode: string;
     mutatedCode: string;
     excludeMutantId?: number;
@@ -212,6 +215,7 @@ export const mutantService = {
     projectId: string;
     commitSha: string;
     filePath: string;
+    startLine: number;
     originalCode: string;
     mutatedCode: string;
   }): Promise<DuplicateCheck> {
@@ -240,6 +244,7 @@ export const mutantService = {
         projectId: mutant.projectId,
         revisionId: mutant.revisionId,
         filePath: mutant.filePath,
+        startLine: mutant.startLine,
         originalCode: mutant.originalCode,
         mutatedCode: mutant.mutatedCode,
         excludeMutantId: mutant.id,
@@ -299,6 +304,7 @@ export const mutantService = {
       projectId: mutant.projectId,
       revisionId: mutant.revisionId,
       filePath: mutant.filePath,
+      startLine: mutant.startLine,
       originalCode: input.originalCode,
       mutatedCode: input.mutatedCode,
     });
@@ -354,6 +360,7 @@ export const mutantService = {
       projectId: mutant.projectId,
       revisionId: mutant.revisionId,
       filePath: mutant.filePath,
+      startLine: mutant.startLine,
       originalCode: input.originalCode,
       mutatedCode: input.mutatedCode,
       excludeMutantId: mutant.id,

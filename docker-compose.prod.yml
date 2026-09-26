@@ -63,13 +63,14 @@ services:
       timeout: 3s
       retries: 12
 
-  # Applies pending migrations, then exits. The app waits for it to succeed.
+  # Applies pending migrations and refreshes stale mutant fingerprints, then
+  # exits. The app waits for it to succeed.
   migrate:
     build:
       context: .
       target: builder
     image: mutanthub-tools
-    command: ["npx", "prisma", "migrate", "deploy"]
+    command: ["sh", "-c", "npx prisma migrate deploy && npm run db:refingerprint"]
     environment: *app-env
     depends_on:
       postgres:

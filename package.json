@@ -14,6 +14,7 @@
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
+    "db:refingerprint": "tsx prisma/refingerprint.ts",
     "db:studio": "prisma studio",
     "db:setup": "prisma migrate deploy && tsx prisma/seed.ts",
     "test": "vitest run",

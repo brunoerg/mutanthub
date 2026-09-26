@@ -64,8 +64,8 @@ and **service → GitHubClient (live or mock) → cache**.
   per-project role: `CONTRIBUTOR`, `REVIEWER`, `MAINTAINER`. Users have a global role
   (`USER`, `ADMIN`).
 - **Revision** – an exact commit (`projectId + commitSha` is unique). **Every mutant points to a
-  Revision**; a line number is never used as identity. A revision may be the head of a tracked
-  pull request.
+  Revision**; a line number identifies a location only together with its revision. A revision may
+  be the head of a tracked pull request.
 - **PullRequest** – a tracked GitHub pull request with its head/base commits and the changed line
   ranges of the head, so mutants can be scoped to it and summarised in a check run.
 - **Mutant** – file, line range, original/mutated code, git diff, operator, title, description,
@@ -94,10 +94,13 @@ and **service → GitHubClient (live or mock) → cache**.
 
 ## Duplicate detection
 
-`fingerprint = sha256(project, revision, file path, normalized original code, normalized mutated
-code)`; normalization removes indentation, trailing whitespace, CRLF and blank lines. Submissions
-with the same fingerprint are **exact** duplicates; the same code pair at a different revision is
-reported as **similar**. The drawer shows "Possible duplicate" while typing and after submission;
+`fingerprint = sha256(project, revision, file path, start line, normalized original code,
+normalized mutated code)`; normalization removes indentation, trailing whitespace, CRLF and blank
+lines. Submissions with the same fingerprint are **exact** duplicates. The start line is part of
+the identity because files repeat statements (the same mutation of `drop();` in two functions is
+two mutants). The same code pair at a different revision or line is reported as **similar**.
+After changing the fingerprint material, run `npm run db:refingerprint` (the production `migrate`
+service runs it on every deploy; it only touches stale rows). The drawer shows "Possible duplicate" while typing and after submission;
 nothing is blocked automatically. Reviewers can mark a mutant as `DUPLICATE` of another.
 
 ## Commit drift

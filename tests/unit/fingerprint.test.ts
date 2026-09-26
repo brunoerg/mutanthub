@@ -9,6 +9,7 @@ const base = {
   projectId: "proj",
   revisionId: "rev",
   filePath: "src/a.c",
+  startLine: 10,
   originalCode: "if (x > 1) {",
   mutatedCode: "if (x >= 1) {",
 };
@@ -43,6 +44,10 @@ describe("computeFingerprint", () => {
     expect(computeFingerprint(base)).not.toBe(computeFingerprint({ ...base, revisionId: "other" }));
   });
 
+  it("changes when the start line changes (repeated statements are distinct mutants)", () => {
+    expect(computeFingerprint(base)).not.toBe(computeFingerprint({ ...base, startLine: 11 }));
+  });
+
   it("changes when the file, project or code changes", () => {
     expect(computeFingerprint(base)).not.toBe(computeFingerprint({ ...base, filePath: "src/b.c" }));
     expect(computeFingerprint(base)).not.toBe(computeFingerprint({ ...base, projectId: "p2" }));
@@ -60,9 +65,10 @@ describe("computeFingerprint", () => {
 });
 
 describe("computeSimilarityKey", () => {
-  it("ignores the revision", () => {
-    const { revisionId: _r, ...rest } = base;
+  it("ignores the revision and the line", () => {
+    const { revisionId: _r, startLine: _l, ...rest } = base;
     void _r;
+    void _l;
     expect(computeSimilarityKey(rest)).toBe(computeSimilarityKey({ ...rest }));
     expect(computeSimilarityKey(rest)).not.toBe(computeFingerprint(base));
   });
