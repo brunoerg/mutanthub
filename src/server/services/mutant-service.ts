@@ -573,8 +573,14 @@ export const mutantService = {
         importBatchId: filter.batch,
         driftStatus: filter.drift,
         superseded: filter.superseded,
+        createdSince: filter.since ? new Date(`${filter.since}T00:00:00Z`) : undefined,
+        // `until` is inclusive: stop at the start of the following day.
+        createdBefore: filter.until
+          ? new Date(new Date(`${filter.until}T00:00:00Z`).getTime() + 86_400_000)
+          : undefined,
       },
       { page: filter.page, pageSize: filter.pageSize },
+      filter.sort === "oldest" ? "asc" : "desc",
     );
     return { ...result, filter };
   },

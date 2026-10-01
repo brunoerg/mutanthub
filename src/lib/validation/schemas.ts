@@ -309,6 +309,20 @@ export const mutantListFilterSchema = z.object({
    * only the latest result per mutation, "only" lists the superseded ones.
    */
   superseded: z.enum(["hide", "only"]).optional(),
+  /** Created on or after this day (YYYY-MM-DD, UTC). */
+  since: z
+    .string()
+    .trim()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  /** Created on or before this day (YYYY-MM-DD, UTC). */
+  until: z
+    .string()
+    .trim()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  /** Creation order; newest first when omitted. */
+  sort: z.enum(["oldest"]).optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(25),
 });

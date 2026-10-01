@@ -194,4 +194,14 @@ export const userRepository = {
       take,
     });
   },
+
+  /** Usernames of everyone who created at least one mutant (optionally in one project). */
+  async listMutantContributors(projectId?: string) {
+    const users = await prisma.user.findMany({
+      where: { mutants: { some: projectId ? { projectId } : {} } },
+      select: { githubUsername: true },
+      orderBy: { githubUsername: "asc" },
+    });
+    return users.map((u) => u.githubUsername);
+  },
 };

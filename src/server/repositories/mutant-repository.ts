@@ -141,6 +141,8 @@ export interface MutantListWhere {
   commitShaPrefix?: string;
   filePathContains?: string;
   createdSince?: Date;
+  /** Exclusive upper bound on createdAt. */
+  createdBefore?: Date;
   /** Restrict to a set of projects (reviewer scope). */
   projectIdIn?: string[];
   text?: string;
@@ -173,6 +175,7 @@ export function buildMutantWhere(w: MutantListWhere): Prisma.MutantWhereInput {
   if (w.filePathContains)
     and.push({ filePath: { contains: w.filePathContains, mode: "insensitive" } });
   if (w.createdSince) and.push({ createdAt: { gte: w.createdSince } });
+  if (w.createdBefore) and.push({ createdAt: { lt: w.createdBefore } });
   if (w.importBatchId) and.push({ importBatchId: w.importBatchId });
   if (w.driftStatus) and.push({ driftStatus: w.driftStatus });
   if (w.superseded) and.push({ superseded: w.superseded === "only" });
@@ -232,13 +235,13 @@ export const mutantRepository = {
     return prisma.mutant.findUnique({ where: { id }, select: mutantListSelect });
   },
 
-  async list(where: MutantListWhere, page: Page) {
+  async list(where: MutantListWhere, page: Page, order: "asc" | "desc" = "desc") {
     const prismaWhere = buildMutantWhere(where);
     const [items, total] = await prisma.$transaction([
       prisma.mutant.findMany({
         where: prismaWhere,
         select: mutantListSelect,
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: order },
         skip: (page.page - 1) * page.pageSize,
         take: page.pageSize,
       }),
