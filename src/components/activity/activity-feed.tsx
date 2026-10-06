@@ -23,6 +23,21 @@ function describe(item: ActivityItem): React.ReactNode {
     </Link>
   ) : null;
   const payload = (item.payload ?? {}) as Record<string, unknown>;
+  const runRequest =
+    item.project && typeof payload.requestId === "string" ? (
+      <Link
+        href={routes.projectRunRequest(
+          item.project.githubOwner,
+          item.project.githubRepository,
+          payload.requestId,
+        )}
+        className="font-mono text-xs hover:underline"
+      >
+        PR #{String(payload.number ?? "")}
+      </Link>
+    ) : (
+      <span className="font-mono text-xs">PR #{String(payload.number ?? "")}</span>
+    );
 
   switch (item.type) {
     case "MUTANT_SUBMITTED":
@@ -135,6 +150,27 @@ function describe(item: ActivityItem): React.ReactNode {
         <>
           {actor} imported {String(payload.created ?? "")} mutants from{" "}
           <span className="font-mono text-xs">{String(payload.tool ?? "a tool")}</span>
+        </>
+      );
+    case "RUN_REQUESTED":
+      return (
+        <>
+          {actor} requested a mutation testing run for {runRequest}
+        </>
+      );
+    case "RUN_CLAIMED":
+      return (
+        <>
+          {actor} is running mutation testing on {runRequest}
+        </>
+      );
+    case "RUN_REPORTED":
+      return (
+        <>
+          {actor} reported a mutation testing run on {runRequest}
+          {payload.detail ? (
+            <span className="text-muted-foreground"> · {String(payload.detail)}</span>
+          ) : null}
         </>
       );
     case "COMMENT_ADDED":

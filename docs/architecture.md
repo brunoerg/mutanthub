@@ -84,6 +84,16 @@ and **service → GitHubClient (live or mock) → cache**.
 - **KillClaim** – a structured claim that a pull request, commit or test kills the mutant, with
   the checks MutantHub ran against GitHub (PR state, verification commit, whether the original
   code still applies) and its verification status. Reproductions can be attached to a claim.
+- **RunRequest** – "could someone run mutation testing on PR #123?" Pinned to the PR head at
+  request time, optionally scoped to some of its changed files, with notes for runners. Only
+  `OPEN`, `CLOSED` and `CANCELLED` are stored; "in progress", "reported" and "outdated" (the PR
+  moved past the requested commit) are derived at read time (`src/domain/run-requests/status.ts`),
+  so nothing has to expire claims in the background. Open requests close when their PR is merged
+  or closed. One open request per PR; others add a vote, which also subscribes them.
+- **RunClaim** – a runner's "I'm running this" (expires after 48 hours unless extended) and,
+  once done, their self-reported run: tool, commit, command, generated / killed / survived
+  counts. A report with nothing surviving is still a result. Surviving mutants are submitted and
+  reviewed as usual; a report never changes a mutant.
 - **Comment** – Markdown discussion (sanitized on render).
 - **MutantStatusHistory** – append-only log of every review/mutation transition and every
   submission edit (who, from, to, when, comment).

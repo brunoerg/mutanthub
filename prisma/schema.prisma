@@ -105,6 +105,9 @@ enum ActivityType {
   KILL_REFUTED
   MUTANTS_IMPORTED
   MUTANT_DRIFTED
+  RUN_REQUESTED
+  RUN_CLAIMED
+  RUN_REPORTED
 }
 
 /// Whether a mutant's original code is still where it was, on the project's default branch.
@@ -133,22 +136,26 @@ model User {
   updatedAt      DateTime   @updatedAt
 
   // Domain relations
-  memberships   ProjectMember[]
-  follows       ProjectFollow[]
-  mutants       Mutant[]              @relation("MutantCreatedBy")
-  submissions   Submission[]
-  validations   Validation[]
-  comments      Comment[]
-  statusChanges MutantStatusHistory[]
-  activities    Activity[]
-  notifications Notification[]        @relation("NotificationRecipient")
-  triggered     Notification[]        @relation("NotificationActor")
-  auditEntries  AuditLog[]
-  snapshots     DatasetSnapshot[]
-  imports       ImportBatch[]
-  killClaims    KillClaim[]           @relation("KillClaimClaimedBy")
-  killVerdicts  KillClaim[]           @relation("KillClaimResolvedBy")
-  addedProjects Project[]             @relation("ProjectAddedBy")
+  memberships       ProjectMember[]
+  follows           ProjectFollow[]
+  mutants           Mutant[]              @relation("MutantCreatedBy")
+  submissions       Submission[]
+  validations       Validation[]
+  comments          Comment[]
+  statusChanges     MutantStatusHistory[]
+  activities        Activity[]
+  notifications     Notification[]        @relation("NotificationRecipient")
+  triggered         Notification[]        @relation("NotificationActor")
+  auditEntries      AuditLog[]
+  snapshots         DatasetSnapshot[]
+  imports           ImportBatch[]
+  killClaims        KillClaim[]           @relation("KillClaimClaimedBy")
+  killVerdicts      KillClaim[]           @relation("KillClaimResolvedBy")
+  addedProjects     Project[]             @relation("ProjectAddedBy")
+  runRequests       RunRequest[]          @relation("RunRequestRequestedBy")
+  runRequestsClosed RunRequest[]          @relation("RunRequestClosedBy")
+  runClaims         RunClaim[]
+  runVotes          RunRequestVote[]
 
   @@index([globalRole])
 }
@@ -158,21 +165,21 @@ model User {
 // ---------------------------------------------------------------------------
 
 model Project {
-  id                 String   @id @default(cuid())
+  id                 String    @id @default(cuid())
   githubOwner        String
   githubRepository   String
-  githubRepositoryId String?  @unique
+  githubRepositoryId String?   @unique
   displayName        String
   description        String?
-  defaultBranch      String   @default("main")
+  defaultBranch      String    @default("main")
   language           String?
-  isActive           Boolean  @default(true)
+  isActive           Boolean   @default(true)
   addedById          String?
   /// Last drift check against the default branch (see driftStatus on mutants).
   driftCheckedAt     DateTime?
   driftCommitSha     String?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   addedBy       User?           @relation("ProjectAddedBy", fields: [addedById], references: [id], onDelete: SetNull)
   members       ProjectMember[]
@@ -183,6 +190,7 @@ model Project {
   notifications Notification[]
   pullRequests  PullRequest[]
   imports       ImportBatch[]
+  runRequests   RunRequest[]
 
   @@unique([githubOwner, githubRepository])
   @@index([isActive])
@@ -241,43 +249,43 @@ model Revision {
 // ---------------------------------------------------------------------------
 
 model Mutant {
-  id               Int              @id @default(autoincrement())
-  projectId        String
-  revisionId       String
-  filePath         String
-  startLine        Int
-  endLine          Int
-  originalCode     String
-  mutatedCode      String
-  gitDiff          String
-  mutationOperator MutationOperator @default(UNKNOWN)
-  title            String
-  description      String?
-  fingerprint      String
+  id                   Int              @id @default(autoincrement())
+  projectId            String
+  revisionId           String
+  filePath             String
+  startLine            Int
+  endLine              Int
+  originalCode         String
+  mutatedCode          String
+  gitDiff              String
+  mutationOperator     MutationOperator @default(UNKNOWN)
+  title                String
+  description          String?
+  fingerprint          String
   /// Same mutation at any revision or line; see computeSimilarityKey. Null until backfilled.
-  similarityKey    String?
+  similarityKey        String?
   /// Scheme of similarityKey (see SIMILARITY_KEY_VERSION); 1 = code pair only, awaiting backfill.
-  similarityKeyVersion Int         @default(1)
+  similarityKeyVersion Int              @default(1)
   /// A newer commit has a result for the same mutation; see server/repositories/superseded.ts.
-  superseded       Boolean          @default(false)
-  reviewStatus     ReviewStatus     @default(PENDING)
-  mutationStatus   MutationStatus   @default(UNKNOWN)
-  duplicateOfId    Int?
+  superseded           Boolean          @default(false)
+  reviewStatus         ReviewStatus     @default(PENDING)
+  mutationStatus       MutationStatus   @default(UNKNOWN)
+  duplicateOfId        Int?
   /// Set when the mutant was submitted in the context of a pull request.
-  pullRequestId    String?
+  pullRequestId        String?
   /// Provenance for bulk imports: the batch, the tool, and the tool's own mutant id.
   /// Result of the last drift check: is originalCode still at startLine on the default branch?
-  driftStatus    DriftStatus @default(UNCHECKED)
-  driftCheckedAt DateTime?
-  driftCommitSha String?
+  driftStatus          DriftStatus      @default(UNCHECKED)
+  driftCheckedAt       DateTime?
+  driftCommitSha       String?
   /// Line where the original code was found when MOVED.
-  driftLine      Int?
-  importBatchId    String?
-  toolName         String?
-  externalId       String?
-  createdById      String
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  driftLine            Int?
+  importBatchId        String?
+  toolName             String?
+  externalId           String?
+  createdById          String
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
 
   project       Project               @relation(fields: [projectId], references: [id], onDelete: Cascade)
   revision      Revision              @relation(fields: [revisionId], references: [id], onDelete: Restrict)
@@ -411,21 +419,24 @@ model Activity {
 
 /// Per-recipient inbox entry derived from an Activity event.
 model Notification {
-  id        String       @id @default(cuid())
-  userId    String
-  type      ActivityType
-  actorId   String?
-  mutantId  Int?
-  projectId String?
-  title     String
-  body      String?
-  readAt    DateTime?
-  createdAt DateTime     @default(now())
+  id           String       @id @default(cuid())
+  userId       String
+  type         ActivityType
+  actorId      String?
+  mutantId     Int?
+  projectId    String?
+  title        String
+  body         String?
+  /// Set for run-request events, so the notification leads to the request.
+  runRequestId String?
+  readAt       DateTime?
+  createdAt    DateTime     @default(now())
 
-  user    User     @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
-  actor   User?    @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
-  mutant  Mutant?  @relation(fields: [mutantId], references: [id], onDelete: Cascade)
-  project Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  runRequest RunRequest? @relation(fields: [runRequestId], references: [id], onDelete: Cascade)
+  user       User        @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  actor      User?       @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
+  mutant     Mutant?     @relation(fields: [mutantId], references: [id], onDelete: Cascade)
+  project    Project?    @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([userId, readAt, createdAt])
   @@index([mutantId])
@@ -498,10 +509,11 @@ model PullRequest {
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
 
-  project    Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  revisions  Revision[]
-  mutants    Mutant[]
-  killClaims KillClaim[]
+  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  revisions   Revision[]
+  mutants     Mutant[]
+  killClaims  KillClaim[]
+  runRequests RunRequest[]
 
   @@unique([projectId, number])
   @@index([projectId, state, updatedAt])
@@ -608,4 +620,101 @@ model ImportBatch {
   mutants    Mutant[]
 
   @@index([projectId, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Run requests: "please run mutation testing on PR #123"
+// ---------------------------------------------------------------------------
+
+/// Stored lifecycle. "In progress", "reported" and "outdated" are derived from
+/// the claims and the PR head (see src/domain/run-requests/status.ts).
+enum RunRequestStatus {
+  OPEN
+  /// Fulfilled or no longer needed: closed by the requester, a reviewer, or the PR closing.
+  CLOSED
+  CANCELLED
+}
+
+enum RunClaimStatus {
+  /// "I'm running this"; expires at `expiresAt` without a report.
+  ACTIVE
+  REPORTED
+  ABANDONED
+}
+
+/// A request for someone to run mutation testing on a pull request.
+/// At most one OPEN request per pull request: a partial unique index,
+/// "RunRequest_pullRequestId_open_key", added by raw SQL in migration
+/// 20261007120000_run_request_one_open_per_pr (Prisma cannot express it).
+model RunRequest {
+  id            String           @id @default(cuid())
+  projectId     String
+  pullRequestId String
+  requestedById String
+  /// PR head when the request was made (or last retargeted).
+  headSha       String
+  /// Subset of the PR's changed files to focus on; empty means the whole PR.
+  files         String[]
+  notes         String?
+  status        RunRequestStatus @default(OPEN)
+  closedById    String?
+  closedAt      DateTime?
+  closeReason   String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  project       Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  pullRequest   PullRequest      @relation(fields: [pullRequestId], references: [id], onDelete: Cascade)
+  requestedBy   User             @relation("RunRequestRequestedBy", fields: [requestedById], references: [id], onDelete: Cascade)
+  closedBy      User?            @relation("RunRequestClosedBy", fields: [closedById], references: [id], onDelete: SetNull)
+  claims        RunClaim[]
+  votes         RunRequestVote[]
+  notifications Notification[]
+
+  @@index([projectId, status, createdAt])
+  @@index([pullRequestId, status])
+}
+
+/// "+1" on a request: also subscribes the voter to its notifications.
+model RunRequestVote {
+  requestId String
+  userId    String
+  createdAt DateTime @default(now())
+
+  request RunRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  user    User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([requestId, userId])
+  @@index([userId])
+}
+
+/// A runner's claim on a request and, once done, their run report. Reports
+/// are self-reported evidence (text only, never executed); surviving mutants
+/// still go through the normal submission and review flow.
+model RunClaim {
+  id              String         @id @default(cuid())
+  requestId       String
+  userId          String
+  status          RunClaimStatus @default(ACTIVE)
+  expiresAt       DateTime
+  /// Commit the run was made against (usually the request's headSha).
+  commitSha       String?
+  toolName        String?
+  toolVersion     String?
+  command         String?
+  generated       Int?
+  killed          Int?
+  survived        Int?
+  durationSeconds Int?
+  environment     String?
+  notes           String?
+  reportedAt      DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  request RunRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  user    User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([requestId, status])
+  @@index([userId, status])
 }

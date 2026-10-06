@@ -22,6 +22,7 @@ import { publishCheckRun } from "@/server/github/check-run";
 import { projectRepository } from "@/server/repositories/project-repository";
 import { pullRequestRepository } from "@/server/repositories/pull-request-repository";
 import { killClaimRepository } from "@/server/repositories/kill-claim-repository";
+import { runRequestRepository } from "@/server/repositories/run-request-repository";
 import type { Project } from "@/generated/prisma/client";
 import { env } from "@/server/env";
 
@@ -72,6 +73,11 @@ export const pullRequestService = {
       additions: info.additions,
       deletions: info.deletions,
     });
+    if (info.state !== "OPEN")
+      await runRequestRepository.closeOpenForPullRequest(
+        pr.id,
+        `Pull request ${info.state === "MERGED" ? "merged" : "closed"}`,
+      );
 
     // The head commit becomes a Revision so mutants can point at this exact state.
     const head = await client.getCommit(

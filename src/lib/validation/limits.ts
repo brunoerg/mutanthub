@@ -14,4 +14,5 @@ export const LIMITS = {
   searchQuery: 200,
   killingTestRef: 500,
   editReason: 1000,
+  runRequestNotes: 4000,
 } as const;

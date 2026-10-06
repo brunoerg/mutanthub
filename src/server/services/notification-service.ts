@@ -59,8 +59,14 @@ export const notificationService = {
 
 /** Where a notification leads: the mutant (or the review panel for reviewer events). */
 export function notificationTarget(
-  item: Pick<NotificationItem, "type" | "mutant" | "project">,
+  item: Pick<NotificationItem, "type" | "mutant" | "project" | "runRequestId">,
 ): string {
+  if (item.runRequestId && item.project)
+    return routes.projectRunRequest(
+      item.project.githubOwner,
+      item.project.githubRepository,
+      item.runRequestId,
+    );
   if (item.mutant) {
     const reviewerEvent =
       item.type === "MUTANT_SUBMITTED" ||

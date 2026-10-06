@@ -283,6 +283,44 @@ export const trackPullRequestSchema = z.object({
   number: z.coerce.number().int().positive().max(9_999_999),
 });
 
+const count = z.coerce.number().int().min(0).max(10_000_000);
+
+export const createRunRequestSchema = z.object({
+  projectId: z.string().min(1),
+  number: z.coerce.number().int().positive().max(9_999_999),
+  /** Changed files to focus on; empty means the whole pull request. */
+  files: z.array(trimmed(LIMITS.filePath).min(1)).max(200).default([]),
+  notes: optionalText(LIMITS.runRequestNotes),
+});
+
+export const runRequestIdSchema = z.object({ requestId: z.string().min(1).max(64) });
+
+export const closeRunRequestSchema = runRequestIdSchema.extend({
+  outcome: z.enum(["CLOSED", "CANCELLED"]),
+  reason: optionalText(LIMITS.reviewComment),
+});
+
+export const reportRunSchema = runRequestIdSchema.extend({
+  commitSha: commitShaSchema.transform((v) => v.toLowerCase()),
+  toolName: trimmed(100).min(1, "Name the tool you ran"),
+  toolVersion: optionalText(100),
+  command: optionalText(LIMITS.command),
+  generated: count,
+  killed: count,
+  survived: count,
+  durationSeconds: optionalNumber(
+    z.coerce
+      .number()
+      .int()
+      .min(0)
+      .max(30 * 24 * 3600),
+  ),
+  environment: optionalText(LIMITS.environment),
+  notes: optionalText(LIMITS.notes),
+});
+
+export type ReportRunInput = z.infer<typeof reportRunSchema>;
+
 export const setProjectActiveSchema = z.object({
   projectId: z.string().min(1),
   isActive: z
