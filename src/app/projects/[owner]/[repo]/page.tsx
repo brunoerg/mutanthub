@@ -6,6 +6,7 @@ import {
   Code2,
   ExternalLink,
   FileCode2,
+  FlaskConical,
   GitCommitHorizontal,
   GitPullRequest,
   Settings,
@@ -24,6 +25,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { getCurrentUser } from "@/server/auth/session";
 import { projectService } from "@/server/services/project-service";
+import { runRequestService } from "@/server/services/run-request-service";
 import { isAppError } from "@/lib/errors";
 import { routes } from "@/lib/routes";
 import { absoluteDate, relativeTime, shortSha } from "@/lib/format";
@@ -47,10 +49,11 @@ export default async function ProjectOverviewPage({ params }: { params: Params }
     throw e;
   }
 
-  const [overview, head, following] = await Promise.all([
+  const [overview, head, following, openRunRequests] = await Promise.all([
     projectService.getOverview(project),
     projectService.getHeadCommit(project),
     projectService.isFollowing(user, project.id),
+    runRequestService.countOpen(project),
   ]);
   const { counts, drift } = overview;
   const codeRef = head?.sha ?? project.defaultBranch;
@@ -125,6 +128,18 @@ export default async function ProjectOverviewPage({ params }: { params: Params }
               <Button asChild variant="outline" size="sm" data-testid="project-pulls-link">
                 <Link href={routes.projectPulls(project.githubOwner, project.githubRepository)}>
                   <GitPullRequest className="size-3.5" aria-hidden /> Pull requests
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="sm" data-testid="project-run-requests-link">
+                <Link
+                  href={routes.projectRunRequests(project.githubOwner, project.githubRepository)}
+                >
+                  <FlaskConical className="size-3.5" aria-hidden /> Run requests
+                  {openRunRequests ? (
+                    <span className="bg-muted rounded px-1 font-mono text-[10px]">
+                      {openRunRequests}
+                    </span>
+                  ) : null}
                 </Link>
               </Button>
               <Button asChild size="sm" data-testid="browse-code">

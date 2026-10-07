@@ -5,6 +5,7 @@ import { Code2, ExternalLink, RefreshCw } from "lucide-react";
 import { getCurrentUser } from "@/server/auth/session";
 import { projectService } from "@/server/services/project-service";
 import { pullRequestService } from "@/server/services/pull-request-service";
+import { runRequestService } from "@/server/services/run-request-service";
 import { syncPullRequestAction } from "@/server/actions/pull-request-actions";
 import { isAppError } from "@/lib/errors";
 import { routes } from "@/lib/routes";
@@ -18,6 +19,8 @@ import { MutantTable } from "@/components/mutants/mutant-table";
 import { buildQuery } from "@/components/mutants/mutant-filters";
 import { PullRequestMutantFilters } from "@/components/pull-requests/pr-mutant-filters";
 import { PullRequestStateBadge } from "@/components/pull-requests/state-badge";
+import { CreateRunRequestForm } from "@/components/run-requests/create-run-request-form";
+import { RunRequestStatusBadge } from "@/components/run-requests/status-badge";
 import { Bug } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -62,6 +65,8 @@ export default async function PullRequestPage({
     throw e;
   }
   const { pr, onDiff, offDiff, files, filter, stats, totals, filePaths } = detail;
+  const runRequests = await runRequestService.listForPullRequest(pr.id);
+  const openRequest = runRequests.find((r) => r.status === "OPEN");
   const base = routes.projectPull(owner, repo, pr.number);
   const filtered = Object.values(filter).some(Boolean);
   const hrefWith = (over: Record<string, string | undefined>) =>
@@ -208,6 +213,55 @@ export default async function PullRequestPage({
           ) : null}
         </div>
         <aside className="space-y-4">
+          <Section
+            title="Mutation testing runs"
+            description="Ask someone else to run mutation testing on this pull request"
+          >
+            <div className="space-y-3" data-testid="pr-run-requests">
+              {runRequests.length > 0 ? (
+                <ul className="space-y-1.5 text-xs">
+                  {runRequests.map((r) => (
+                    <li key={r.id} className="flex items-center justify-between gap-2">
+                      <Link
+                        href={routes.projectRunRequest(owner, repo, r.id)}
+                        className="min-w-0 truncate hover:underline"
+                        data-testid="pr-run-request-link"
+                      >
+                        Requested by @{r.requestedBy.githubUsername} at{" "}
+                        <span className="font-mono">{r.headSha.slice(0, 7)}</span>
+                      </Link>
+                      <span className="flex shrink-0 items-center gap-1.5">
+                        <span className="text-muted-foreground">{r.reports} reported</span>
+                        <RunRequestStatusBadge status={r.displayStatus} />
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              {openRequest ? null : pr.state !== "OPEN" ? (
+                runRequests.length ? null : (
+                  <p className="text-muted-foreground text-xs">
+                    Runs can be requested while the pull request is open.
+                  </p>
+                )
+              ) : user ? (
+                <CreateRunRequestForm
+                  projectId={project.id}
+                  owner={project.githubOwner}
+                  repo={project.githubRepository}
+                  number={pr.number}
+                  files={files.map((f) => f.path)}
+                />
+              ) : (
+                <p className="text-muted-foreground text-xs">
+                  <Link href={routes.signIn(base)} className="underline">
+                    Sign in
+                  </Link>{" "}
+                  to request a mutation testing run.
+                </p>
+              )}
+            </div>
+          </Section>
           <Section title="Changed files" description="Open in pull request mode">
             {files.length === 0 ? (
               <EmptyState icon={Bug} title="No changed files with additions" compact />

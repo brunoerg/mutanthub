@@ -39,6 +39,10 @@ export const routes = {
   projectImportApi: (owner: string, repo: string) => `/api/projects/${owner}/${repo}/import`,
   projectPull: (owner: string, repo: string, number: number) =>
     `/projects/${owner}/${repo}/pulls/${number}`,
+  projectRunRequests: (owner: string, repo: string, filter?: "closed" | "all") =>
+    `/projects/${owner}/${repo}/requests${filter ? `?status=${filter}` : ""}`,
+  projectRunRequest: (owner: string, repo: string, id: string) =>
+    `/projects/${owner}/${repo}/requests/${id}`,
   mutants: () => "/mutants",
   mutant: (id: number) => `/mutants/${id}`,
   mutantEdit: (id: number) => `/mutants/${id}/edit`,

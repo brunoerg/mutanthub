@@ -44,6 +44,8 @@ This document records the security posture of MutantHub after the pre-release se
 | Notifications                                  | owner only (`notificationService.*`, `findOwned`)                                                                                                                                              |
 | Track / resync a pull request                  | signed in, project active (`pullRequestService.track`)                                                                                                                                         |
 | Report / re-check a killing-test claim         | signed in (`killClaimService.create` / `refresh`)                                                                                                                                              |
+| Request a run, vote, claim, report a run       | signed in, project active (`runRequestService.*`); at most 10 open requests per user                                                                                                           |
+| Close, cancel or retarget a run request        | the requester, or a project reviewer, maintainer or admin (`canManageRunRequest`)                                                                                                              |
 | Verify or refute a claim                       | project reviewer, maintainer or admin (`killClaimService.resolve`)                                                                                                                             |
 | Bulk import of tool output                     | global admin only, same-origin upload (`importService.dryRun` / `commit`)                                                                                                                      |
 | Drift check against the default branch         | project maintainer or admin (`driftService.checkAsMaintainer`), or the `CRON_SECRET` bearer on `/api/jobs/drift`                                                                               |
@@ -64,7 +66,8 @@ Rules are pure functions in `src/domain/auth/permissions.ts` and are unit-tested
   links). Payload tests: `tests/unit/markdown-hardening.test.ts`.
 - Post-login redirects accept same-origin paths only (`src/lib/safe-redirect.ts`).
 - Rate limits (`src/server/infra/rate-limit.ts`): submissions, edits, reproductions, comments,
-  reviews, project registration, duplicate preview, mocked sign-in, and the public API. Redis
+  reviews, run requests (requests, claims, reports), project registration, duplicate preview,
+  mocked sign-in, and the public API. Redis
   makes them shared between instances; without Redis they are per process.
 
 ## Transport and browser hardening

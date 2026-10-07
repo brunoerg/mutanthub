@@ -108,3 +108,12 @@ export function canChangeMutationStatus(
 ): boolean {
   return canReviewProject(p, projectId);
 }
+
+/** The requester and the project's reviewers may close, cancel or retarget a run request. */
+export function canManageRunRequest(
+  p: Principal | null | undefined,
+  request: { projectId: string; requestedById: string },
+): boolean {
+  if (!p) return false;
+  return p.id === request.requestedById || canReviewProject(p, request.projectId);
+}

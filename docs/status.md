@@ -33,6 +33,13 @@ What is implemented and what is planned.
   and per-file counts are shortcuts). Both the page and the check run count each mutation once,
   with its latest result: mutants superseded by a newer push are hidden unless asked for, and an
   import at a pull request head refreshes its check run.
+- Run requests: ask for someone to run mutation testing on an open pull request (from the PR page
+  or the project's `/requests` board), optionally scoped to some changed files. Followers and
+  reviewers are notified; runners claim it ("I'm running this", 48-hour hold), report the tool,
+  commit and generated / killed / survived counts (also when nothing survived), and submit the
+  survivors as usual. Requests show as outdated when the PR moves on (the requester can retarget),
+  list which files in scope still have no mutants, and close automatically when the PR is merged
+  or closed.
 - In-app notifications: submitters and everyone who commented or reproduced a mutant hear about
   review decisions, reproductions, classifications and comments; reviewers hear about new,
   edited and resubmitted submissions. Header bell with unread count, `/notifications` inbox,
