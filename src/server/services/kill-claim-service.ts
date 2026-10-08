@@ -241,8 +241,9 @@ async function runChecks(
     const number = Number(reference);
     let info: PullRequestInfo;
     try {
-      // Track the PR so it gets its own page and check run.
-      const pr = await pullRequestService.sync(project, number);
+      // Sync the PR so it gets its own page and check run, without listing it
+      // among the project's tracked pull requests.
+      const pr = await pullRequestService.sync(project, number, { track: false });
       pullRequestId = pr.id;
       info = await client.getPullRequest(project.githubOwner, project.githubRepository, number);
     } catch (e) {

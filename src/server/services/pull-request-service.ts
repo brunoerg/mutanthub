@@ -34,8 +34,10 @@ export const pullRequestService = {
   /**
    * Fetches the pull request and its changed files from GitHub, upserts the
    * record, and makes sure the head commit exists as a Revision linked to it.
+   * With `track: false` the PR gets a page and a check run but is not listed
+   * on the pull requests page (a PR only referenced by a kill claim).
    */
-  async sync(project: Project, number: number) {
+  async sync(project: Project, number: number, { track = true }: { track?: boolean } = {}) {
     const client = getGitHubClient();
     let info;
     let files;
@@ -72,6 +74,7 @@ export const pullRequestService = {
       changedFiles: files.length,
       additions: info.additions,
       deletions: info.deletions,
+      tracked: track,
     });
     if (info.state !== "OPEN")
       await runRequestRepository.closeOpenForPullRequest(
