@@ -19,6 +19,8 @@ export interface UpsertPullRequestData {
   changedFiles: number;
   additions: number;
   deletions: number;
+  /** False syncs the PR without listing it; never untracks a tracked PR. */
+  tracked: boolean;
 }
 
 export const pullRequestSummarySelect = {
@@ -57,7 +59,7 @@ export const pullRequestRepository = {
 
   listForProject(projectId: string, take = 50) {
     return prisma.pullRequest.findMany({
-      where: { projectId },
+      where: { projectId, tracked: true },
       select: pullRequestSummarySelect,
       orderBy: [{ state: "asc" }, { updatedAt: "desc" }],
       take,
@@ -65,11 +67,11 @@ export const pullRequestRepository = {
   },
 
   upsert(data: UpsertPullRequestData) {
-    const { projectId, number, ...rest } = data;
+    const { projectId, number, tracked, ...rest } = data;
     return prisma.pullRequest.upsert({
       where: { projectId_number: { projectId, number } },
-      create: { projectId, number, ...rest, lastSyncedAt: new Date() },
-      update: { ...rest, lastSyncedAt: new Date() },
+      create: { projectId, number, tracked, ...rest, lastSyncedAt: new Date() },
+      update: { ...rest, ...(tracked ? { tracked } : {}), lastSyncedAt: new Date() },
       include: { project: true },
     });
   },

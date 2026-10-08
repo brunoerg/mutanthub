@@ -53,6 +53,15 @@ test.describe("killing-test claims", () => {
       /APPLIES|MOVED/,
     );
 
+    // The claimed PR has its own page but is not listed as a tracked pull request.
+    await page.goto(`/projects/curl/curl/pulls/${MERGED_PR}`);
+    await expect(page.getByTestId("pull-request-files")).toContainText("lib/parsedate.c");
+    await page.goto("/projects/curl/curl/pulls");
+    await expect(
+      page.getByTestId("pull-request-row").filter({ hasText: `#${MERGED_PR}` }),
+    ).toHaveCount(0);
+    await page.goto(`/mutants/${mutantId}`);
+
     // Unrecognised references and duplicates are rejected inline.
     await page.getByTestId("kill-claim-reference").fill("not a ref!");
     await page.getByTestId("kill-claim-submit").click();

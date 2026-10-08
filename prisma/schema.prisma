@@ -505,6 +505,9 @@ model PullRequest {
   /// GitHub check run id for the latest report, when the app can post checks.
   checkRunId    String?
   checkRunAt    DateTime?
+  /// Listed on the project's pull requests page. False when the PR was only
+  /// synced to check a kill claim; tracking it (UI, webhook, run request) sets it.
+  tracked       Boolean          @default(true)
   lastSyncedAt  DateTime         @default(now())
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
