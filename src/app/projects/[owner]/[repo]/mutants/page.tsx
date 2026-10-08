@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Braces, Code2, LayoutDashboard } from "lucide-react";
 import { projectService } from "@/server/services/project-service";
 import { mutantService } from "@/server/services/mutant-service";
+import { userRepository } from "@/server/repositories/user-repository";
 import { isAppError } from "@/lib/errors";
 import { PageContainer, PageHeader } from "@/components/shared/page-header";
 import { Pagination } from "@/components/shared/pagination";
@@ -11,6 +12,7 @@ import { MutantTable } from "@/components/mutants/mutant-table";
 import {
   MutantFilters,
   buildQuery,
+  supersededView,
   type MutantFilterValues,
 } from "@/components/mutants/mutant-filters";
 import { Button } from "@/components/ui/button";
@@ -54,8 +56,13 @@ export default async function ProjectMutantsPage({
   const { owner, repo } = await params;
   const project = await loadProject(owner, repo);
   const slug = `${project.githubOwner}/${project.githubRepository}`;
-  const raw = { ...firstValues(await searchParams), project: slug };
-  const { items, total, filter } = await mutantService.list(raw);
+  const sp = firstValues(await searchParams);
+  const raw = { ...sp, project: slug };
+  const superseded = supersededView(sp.superseded);
+  const [{ items, total, filter }, contributors] = await Promise.all([
+    mutantService.list({ ...raw, superseded: superseded.filter }),
+    userRepository.listMutantContributors(project.id),
+  ]);
 
   const values: MutantFilterValues = {
     project: slug,
@@ -68,7 +75,10 @@ export default async function ProjectMutantsPage({
     q: filter.q,
     batch: filter.batch,
     drift: filter.drift,
-    superseded: filter.superseded,
+    superseded: superseded.view,
+    since: filter.since,
+    until: filter.until,
+    sort: filter.sort,
   };
   const query = {
     ...values,
@@ -76,7 +86,7 @@ export default async function ProjectMutantsPage({
     pageSize: filter.pageSize !== 25 ? filter.pageSize : undefined,
   };
   const base = routes.projectMutants(project.githubOwner, project.githubRepository);
-  const apiHref = `/api/mutants${buildQuery({ ...values, page: filter.page })}`;
+  const apiHref = `/api/mutants${buildQuery({ ...values, superseded: filter.superseded, page: filter.page })}`;
 
   return (
     <PageContainer wide className="space-y-4" data-testid="project-mutants-page">
@@ -111,7 +121,13 @@ export default async function ProjectMutantsPage({
           </>
         }
       />
-      <MutantFilters action={base} values={values} projects={[]} languages={[]} lockProject />
+      <MutantFilters
+        action={base}
+        values={values}
+        projects={[]}
+        contributors={contributors}
+        lockProject
+      />
       <div className="text-muted-foreground text-xs" data-testid="mutant-count">
         {total} mutant{total === 1 ? "" : "s"}
         {filter.file ? (

@@ -213,7 +213,9 @@ test.describe("pull requests", () => {
     // The same escape.c mutation is judged equivalent at another commit, which supersedes
     // the survivor recorded on the PR: it drops out unless superseded results are shown.
     await upload(OLDER, [{ ...escapeRow, title: `${offDiff} (older)` }]);
-    await page.goto(`/projects/${OWNER}/${REPO}/mutants?q=${encodeURIComponent(offDiff)}`);
+    await page.goto(
+      `/projects/${OWNER}/${REPO}/mutants?q=${encodeURIComponent(offDiff)}&superseded=show`,
+    );
     await page.getByText(`${offDiff} (older)`).click();
     await page.waitForURL(/\/mutants\/\d+$/);
     await page.waitForLoadState("networkidle");

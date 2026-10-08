@@ -130,15 +130,17 @@ test.describe("bulk import", () => {
       await expect(page.getByTestId("import-done")).toContainText(/1 mutants? imported/);
     }
 
-    await page.goto("/projects/curl/curl/mutants?mutationStatus=SURVIVED");
+    await page.goto("/projects/curl/curl/mutants?mutationStatus=SURVIVED&superseded=show");
+    await expect(page.getByTestId("filter-superseded")).toHaveValue("show");
     const row = page.getByRole("row").filter({ hasText: title });
     await expect(row.getByTestId("superseded")).toBeVisible();
 
-    await page.goto("/projects/curl/curl/mutants?mutationStatus=SURVIVED&superseded=hide");
-    await expect(page.getByTestId("filter-superseded")).toHaveValue("hide");
+    // Superseded results are hidden by default.
+    await page.goto("/projects/curl/curl/mutants?mutationStatus=SURVIVED");
+    await expect(page.getByTestId("filter-superseded")).toHaveValue("");
     await expect(page.getByText(title)).toHaveCount(0);
 
-    await page.goto("/projects/curl/curl/mutants?mutationStatus=KILLED&superseded=hide");
+    await page.goto("/projects/curl/curl/mutants?mutationStatus=KILLED");
     await expect(page.getByText(title)).toBeVisible();
   });
 
