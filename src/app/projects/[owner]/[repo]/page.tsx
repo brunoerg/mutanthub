@@ -142,6 +142,19 @@ export default async function ProjectOverviewPage({ params }: { params: Params }
                   ) : null}
                 </Link>
               </Button>
+              {project.isActive ? (
+                <Button
+                  asChild
+                  className="bg-violet-600 text-white hover:bg-violet-600/85 dark:bg-violet-500 dark:hover:bg-violet-500/85"
+                  data-testid="project-request-run"
+                >
+                  <Link
+                    href={`${routes.projectRunRequests(project.githubOwner, project.githubRepository)}#request-a-run`}
+                  >
+                    <FlaskConical aria-hidden /> Request a run for a PR
+                  </Link>
+                </Button>
+              ) : null}
               <Button asChild size="sm" data-testid="browse-code">
                 <Link href={routes.projectCode(project.githubOwner, project.githubRepository)}>
                   <Code2 className="size-3.5" aria-hidden /> Browse code
