@@ -104,7 +104,11 @@ export async function parseExportSelection(
     "commit",
     "file",
     "q",
+    "batch",
+    "drift",
     "superseded",
+    "since",
+    "until",
   ] as const) {
     const value = filter[key];
     if (value) filters[key] = value;
@@ -121,7 +125,14 @@ export async function parseExportSelection(
       commitShaPrefix: filter.commit,
       filePathContains: filter.file,
       text: filter.q,
+      importBatchId: filter.batch,
+      driftStatus: filter.drift,
       superseded: filter.superseded,
+      createdSince: filter.since ? new Date(`${filter.since}T00:00:00Z`) : undefined,
+      // `until` is inclusive: stop at the start of the following day.
+      createdBefore: filter.until
+        ? new Date(new Date(`${filter.until}T00:00:00Z`).getTime() + 86_400_000)
+        : undefined,
     },
     limit,
     filters,

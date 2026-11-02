@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Braces, Code2, LayoutDashboard } from "lucide-react";
+import { Braces, Code2, Download, LayoutDashboard } from "lucide-react";
 import { projectService } from "@/server/services/project-service";
 import { mutantService } from "@/server/services/mutant-service";
 import { userRepository } from "@/server/repositories/user-repository";
@@ -87,6 +87,11 @@ export default async function ProjectMutantsPage({
   };
   const base = routes.projectMutants(project.githubOwner, project.githubRepository);
   const apiHref = `/api/mutants${buildQuery({ ...values, superseded: filter.superseded, page: filter.page })}`;
+  // Bulk export of every mutant matching the current filters (not just this page).
+  const exportHref = routes.exportMutants(
+    "json",
+    buildQuery({ ...values, superseded: filter.superseded, sort: undefined }).slice(1),
+  );
 
   return (
     <PageContainer wide className="space-y-4" data-testid="project-mutants-page">
@@ -112,6 +117,11 @@ export default async function ProjectMutantsPage({
               <Link href={routes.projectCode(project.githubOwner, project.githubRepository)}>
                 <Code2 className="size-3.5" aria-hidden /> Browse code
               </Link>
+            </Button>
+            <Button asChild variant="outline" size="sm" data-testid="export-filtered-json">
+              <a href={exportHref} title="Download every mutant matching these filters as JSON">
+                <Download className="size-3.5" aria-hidden /> Export JSON
+              </a>
             </Button>
             <Button asChild variant="ghost" size="sm">
               <a href={apiHref} target="_blank" rel="noreferrer">

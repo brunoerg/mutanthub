@@ -14,11 +14,22 @@ with the evidence and the community's reproductions. This page is written for re
 
 Live exports stream straight from the database and accept the same filters as the list API:
 `project=owner/repo`, `language`, `operator`, `reviewStatus`, `mutationStatus`, `contributor`,
-`commit`, `file`, `q`, `superseded`, plus `limit` (default 10,000, maximum 50,000). Example:
+`commit`, `file`, `q`, `batch`, `drift`, `superseded`, `since`, `until` (`YYYY-MM-DD`, inclusive),
+plus `limit` (default 10,000, maximum 50,000). Example:
 
 ```bash
 curl -sL "https://mutanthub.example.com/api/export/mutants.csv?project=curl/curl&reviewStatus=APPROVED" -o curl-mutants.csv
 ```
+
+To get the surviving mutants of one project that still apply to its default branch, with diffs
+(e.g. to feed to an LLM that writes tests for them):
+
+```bash
+curl -sL "https://mutanthub.example.com/api/export/mutants.json?project=libbitcoin/libbitcoin-system&mutationStatus=SURVIVED&drift=APPLIES&superseded=hide" -o survivors.json
+```
+
+The **Export JSON** button on a project's Mutants page downloads the same export for the filters
+currently applied there.
 
 Snapshots are published by administrators from the **Dataset** page. Their rows are stored as
 published, so later status changes never alter them, and each one carries a SHA-256 hash of the
