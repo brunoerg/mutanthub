@@ -138,6 +138,7 @@ export const projectService = {
   async getOverview(project: Project) {
     const [
       counts,
+      latestSurviving,
       topFiles,
       topContributors,
       recentMutants,
@@ -148,6 +149,7 @@ export const projectService = {
       drift,
     ] = await Promise.all([
       statsRepository.countsForProject(project.id),
+      statsRepository.countLatestSurvivingForProject(project.id),
       statsRepository.topFilesForProject(project.id),
       statsRepository.topContributorsForProject(project.id),
       mutantRepository.list({ projectId: project.id }, { page: 1, pageSize: 6 }),
@@ -159,6 +161,7 @@ export const projectService = {
     ]);
     return {
       counts,
+      latestSurviving,
       drift,
       topFiles,
       topContributors,

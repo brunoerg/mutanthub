@@ -73,6 +73,16 @@ export const statsRepository = {
     return foldStatusCounts(rows);
   },
 
+  /**
+   * Surviving mutants that are still the latest result for their mutation:
+   * no newer commit killed it or showed it equivalent (see superseded.ts).
+   */
+  countLatestSurvivingForProject(projectId: string): Promise<number> {
+    return prisma.mutant.count({
+      where: { projectId, mutationStatus: "SURVIVED", superseded: false },
+    });
+  },
+
   async countsForUser(userId: string): Promise<StatusCounts> {
     const rows = await prisma.mutant.findMany({
       where: { createdById: userId },

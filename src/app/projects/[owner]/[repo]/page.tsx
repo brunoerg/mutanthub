@@ -55,7 +55,7 @@ export default async function ProjectOverviewPage({ params }: { params: Params }
     projectService.isFollowing(user, project.id),
     runRequestService.countOpen(project),
   ]);
-  const { counts, drift } = overview;
+  const { counts, drift, latestSurviving } = overview;
   const codeRef = head?.sha ?? project.defaultBranch;
 
   return (
@@ -179,9 +179,21 @@ export default async function ProjectOverviewPage({ params }: { params: Params }
           commits may no longer match.
         </p>
 
-        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
           <Stat label="Total mutants" value={counts.total} />
           <Stat label="Surviving" value={counts.surviving} tone="warning" />
+          <Stat
+            label="Surviving (excl. superseded)"
+            value={latestSurviving}
+            tone="warning"
+            hint={
+              counts.surviving > latestSurviving
+                ? `${counts.surviving - latestSurviving} superseded by newer results`
+                : "latest result per mutation"
+            }
+            href={`${routes.projectMutants(project.githubOwner, project.githubRepository)}?mutationStatus=SURVIVED`}
+            testId="project-stat-surviving-latest"
+          />
           <Stat label="Killed" value={counts.killed} tone="success" />
           <Stat label="Equivalent" value={counts.equivalent} tone="info" />
           <Stat
