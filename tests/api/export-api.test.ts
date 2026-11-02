@@ -134,6 +134,26 @@ describe("bulk export routes", () => {
     );
     expect(iterateMock).toHaveBeenCalledWith(expect.objectContaining({ projectId: "p1" }), 50_000);
   });
+
+  it("passes drift, batch and date filters through to the query", async () => {
+    iterateMock.mockImplementation(() => batches([]));
+    await jsonGet(
+      new Request(
+        "http://localhost:3000/api/export/mutants.json?mutationStatus=SURVIVED&drift=APPLIES&batch=b1&since=2026-09-01&until=2026-09-30&superseded=hide",
+      ),
+    );
+    expect(iterateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mutationStatus: "SURVIVED",
+        driftStatus: "APPLIES",
+        importBatchId: "b1",
+        superseded: "hide",
+        createdSince: new Date("2026-09-01T00:00:00Z"),
+        createdBefore: new Date("2026-10-01T00:00:00Z"),
+      }),
+      10_000,
+    );
+  });
 });
 
 describe("GET /api/mutants/:id/patch", () => {
